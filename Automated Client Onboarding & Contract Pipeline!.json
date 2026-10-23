@@ -1,0 +1,323 @@
+{
+  "name": "Automated Client Onboarding & Contract Pipeline!",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "client-onboarding",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.2,
+      "position": [
+        -720,
+        128
+      ],
+      "id": "9250a386-683f-4e7d-8373-c9d4801340fd",
+      "name": "Webhook",
+      "webhookId": "663a767c-e3e7-4196-b924-0e94f85d2127"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an expert agency operations manager. Based on the client details provided below, generate a clean JSON object containing:\n1. \"client_welcome_summary\": A warm 2-sentence welcome note summarizing their project scope.\n2. \"next_steps\": A numbered list of 3 actionable steps for their onboarding.\n3. \"invoice_description\": A formatted line item for their invoice.\n\nClient Details:\n- Name: {{ $('Code in JavaScript').item.json.name }}\n- Company: {{ $('Code in JavaScript').item.json.company }}\n- Service: {{ $('Code in JavaScript').item.json.service }}\n- Budget: ${{ $('Code in JavaScript').item.json.budget }}",
+        "messages": {
+          "messageValues": []
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        -304,
+        0
+      ],
+      "id": "5702fd13-cddd-46bb-89d0-52ea5c87be08",
+      "name": "Basic LLM Chain",
+      "retryOnFail": false,
+      "maxTries": 2
+    },
+    {
+      "parameters": {
+        "chatId": "8845230921`",
+        "text": "=🎉 *NEW CLIENT ONBOARDED!*\n\n👤 *Client:* {{ $('Code in JavaScript').item.json.name }} ({{ $('Code in JavaScript').item.json.company }})\n💼 *Service:* {{ $('Code in JavaScript').item.json.service }}\n💰 *Value:* ${{ $('Code in JavaScript').item.json.budget }}\n📌 *STATUS:* Onboarding Package Sent",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        176,
+        -16
+      ],
+      "id": "c4985bcb-4e15-4d4a-958d-035b3c4759cf",
+      "name": "Send a text message",
+      "webhookId": "3aff521d-c714-4b58-a9bd-3bdd9e286e87",
+      "executeOnce": false,
+      "credentials": {
+        "telegramApi": {
+          "id": "gS6dBf8LKXQGP1UG",
+          "name": "Telegram account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1XLPtHXJ1nRGOts6wuPv6XSZ_rXWWPsMK-QkV8dZyCkQ",
+          "mode": "list",
+          "cachedResultName": "client tracking",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1XLPtHXJ1nRGOts6wuPv6XSZ_rXWWPsMK-QkV8dZyCkQ/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1XLPtHXJ1nRGOts6wuPv6XSZ_rXWWPsMK-QkV8dZyCkQ/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Client Name": "={{ $('Code in JavaScript').item.json.name }}",
+            "Company": "={{ $('Code in JavaScript').item.json.company }}",
+            "Service": "={{ $('Code in JavaScript').item.json.service }}",
+            "Status": "={{ $('Code in JavaScript').item.json.service }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Client Name",
+              "displayName": "Client Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Company",
+              "displayName": "Company",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Service",
+              "displayName": "Service",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Contract Value",
+              "displayName": "Contract Value",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Date",
+              "displayName": "Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        0,
+        32
+      ],
+      "id": "a939b3ee-518b-44ed-90ae-4db29b0de3c9",
+      "name": "Append row in sheet",
+      "executeOnce": true,
+      "retryOnFail": false,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uwIxAqOpCMYni4k6",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "qwen/qwen3.8-27b",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        -160,
+        224
+      ],
+      "id": "33c90015-3439-4851-a7b5-be26b856f7d0",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "id": "6SalY5xRuZNnRBXY",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Safely locate fields regardless of Webhook structure\nconst body = $json.body || $json;\nconst data = body.data || body;\nconst fields = data.fields || [];\n\n// Helper function to extract value or readable option text by label keyword\nfunction getAnswer(labelKey) {\n  const item = fields.find(f => f.label && f.label.toLowerCase().includes(labelKey.toLowerCase()));\n  if (!item) return '';\n\n  // If the field has a dropdown/multiple choice value (ID) and an options array\n  if (Array.isArray(item.options) && item.value) {\n    const selectedOption = item.options.find(opt => opt.id === item.value || (Array.isArray(item.value) && item.value.includes(opt.id)));\n    if (selectedOption) return selectedOption.text;\n  }\n\n  // Fallback to value if it's plain text/number\n  return item.value || '';\n}\n\nreturn {\n  json: {\n    name: getAnswer('Name'),\n    company: getAnswer('Company'),\n    email: getAnswer('Email'),\n    service: getAnswer('Service'),\n    budget: getAnswer('Value') || getAnswer('Contract')\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -480,
+        112
+      ],
+      "id": "2e12c051-1b6a-40dc-b19f-cad3fdfdcfc6",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Code in JavaScript').item.json.email }}",
+        "subject": "=Welcome to the Agency - Onboarding for {{ $('Code in JavaScript').item.json.company }}",
+        "message": "=<div style=\"font-family: Arial, sans-serif; max-width: 600px; color: #333; line-height: 1.6; border: 1px solid #e0e0e0; border-radius: 8px; padding: 25px; margin: auto;\">\n  <h2 style=\"color: #2563eb; margin-top: 0;\">Welcome Aboard, {{ $('Code in JavaScript').item.json.name }}! 🎉</h2>\n  <p>We are thrilled to partner with <strong>{{ $('Code in JavaScript').item.json.company }}</strong> for your <strong>{{ $('Code in JavaScript').item.json.service }}</strong> project.</p>\n\n  <div style=\"background-color: #f8fafc; border-left: 4px solid #2563eb; padding: 15px; margin: 20px 0;\">\n    <h4 style=\"margin: 0 0 8px 0; color: #1e293b;\">Project Scope Summary</h4>\n    <p style=\"margin: 0; color: #475569;\">{{ $json.text }}</p>\n  </div>\n\n  <div style=\"text-align: center; margin-top: 30px;\">\n    <a href=\"https://your-agency-link.com/portal\" style=\"background-color: #2563eb; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;\">Access Client Portal</a>\n  </div>\n\n  <hr style=\"border: none; border-top: 1px solid #e2e8f0; margin-top: 30px;\">\n  <p style=\"font-size: 12px; color: #94a3b8; text-align: center;\">Clinton | AI Workflow Engineering Studio</p>\n</div>",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        400,
+        -16
+      ],
+      "id": "158fb1b4-0e6f-4ec2-9b4e-549c6a254a91",
+      "name": "Send a message",
+      "webhookId": "217ec4cd-ba42-41e8-9812-a90ac3e068a9",
+      "alwaysOutputData": false,
+      "executeOnce": false,
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "Mujj4eCTkXyEijPe",
+          "name": "Gmail account 2"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a text message": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "timezone": "Africa/Lagos",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "1acc7df5-c62c-4c00-adab-e6b0a448c2d5",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "13ff3582439a99c8dc80561afe729fccd8e5ecb467e032acc521d2dc3b6fc2df"
+  },
+  "nodeGroups": [],
+  "id": "5ce46w9jC7qykHdA",
+  "tags": []
+}
