@@ -1,0 +1,497 @@
+{
+  "name": "automated multi-source job agent",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 12
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -80,
+        336
+      ],
+      "id": "9d6ffa01-035c-4652-8afb-f93ea007e27a",
+      "name": "Schedule Trigger",
+      "retryOnFail": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  { json: { site: \"Jobgurus\", url: \"https://www.jobgurus.com.ng/jobs/rss\" } },\n  { json: { site: \"HotNigerianJobs\", url: \"https://www.hotnigerianjobs.com/rss.xml\" } },\n  { json: { site: \"Jobzilla\", url: \"https://www.jobzilla.ng/feed\" } }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        192,
+        224
+      ],
+      "id": "edd7ff7b-a15d-4f8e-a335-538092aaceb2",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.url }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [
+        368,
+        160
+      ],
+      "id": "5ae1f328-3f30-4a57-8ca6-dd85720cffbe",
+      "name": "RSS Read",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "40d2b8a4-2539-4c61-b667-d114b0de327f",
+              "leftValue": "={{ ($json.title || '').toLowerCase() }}",
+              "rightValue": "\\b(trainee|graduate|intern|internship|entry|junior|associate)\\b",
+              "operator": {
+                "type": "string",
+                "operation": "regex"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.3,
+      "position": [
+        736,
+        160
+      ],
+      "id": "7888ab88-0638-47e9-b19f-d2fd026260f6",
+      "name": "Filter"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1280,
+        272
+      ],
+      "id": "6eefcf95-5a4b-4515-9879-20933d4c966f",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an AI career advisor screening job listings for a fresh graduate looking for entry-level positions in Nigeria.\n\nAnalyze this job listing:\nTitle: {{ $json.title }}\nDescription: {{ $json.contentSnippet || $json.content }}\n\nEvaluate the post and output ONLY a valid JSON object matching this structure:\n{\n  \"job_title\": \"{{ $json.title }}\",\n  \"fit_score\": 8,\n  \"is_legit\": \"Yes\",\n  \"reasoning\": \"Brief explanation of why it fits or does not fit a fresh graduate.\",\n  \"apply_link\": \"{{ $json.link }}\"\n}\n\nRules:\n1. \"fit_score\": Give a score from 1 to 10 based on suitability for an entry-level candidate or fresh graduate.\n2. \"is_legit\": Set to \"No\" if it asks for payment or seems like a scam.\n3. Output strictly valid raw JSON without markdown code blocks.\nDescription: {{ ($json.contentSnippet || $json.content || '').slice(0, 800) }}\nScreen this Nigerian entry-level role:\nTitle: {{ $json.title }}\nDescription: {{ ($json.contentSnippet || $json.content || '').slice(0, 500) }}\n\nOutput ONLY raw JSON with max 15 words in reasoning:\n{\n  \"job_title\": \"{{ $json.title }}\",\n  \"fit_score\": 8,\n  \"is_legit\": \"Yes\",\n  \"reasoning\": \"Short 1-sentence fit explanation.\",\n  \"apply_link\": \"{{ $json.link }}\"\n}\nDescription: {{ ($json.contentSnippet || $json.content || '').replace(/<[^>]*>?/gm, '').slice(0, 300) }}",
+        "messages": {
+          "messageValues": []
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        1472,
+        384
+      ],
+      "id": "8d4018e4-d2ee-4fb8-a075-d6a1672d1d9c",
+      "name": "Basic LLM Chain",
+      "retryOnFail": true,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-oss-120b",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        1536,
+        592
+      ],
+      "id": "611f80c0-3d7e-4ec9-b42c-2e54544c42ba",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "id": "6SalY5xRuZNnRBXY",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "compare": "selectedFields",
+        "fieldsToCompare": "title",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.removeDuplicates",
+      "typeVersion": 2,
+      "position": [
+        880,
+        16
+      ],
+      "id": "6ce879d7-479f-448c-8235-005f1abb4ce2",
+      "name": "Remove Duplicates"
+    },
+    {
+      "parameters": {
+        "maxItems": 10
+      },
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        1120,
+        144
+      ],
+      "id": "4ecd99bd-36e7-4746-9bf9-d684e7f3b8ec",
+      "name": "Limit"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "2a9134a3-22d5-4b75-94cd-cdc475c65f20",
+              "leftValue": "={{ $json.fit_score }}",
+              "rightValue": 7,
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            },
+            {
+              "id": "0a80bcf3-e3a0-4a7f-823b-73ced836a32f",
+              "leftValue": "={{ $json.is_legit }}",
+              "rightValue": "Yes",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1936,
+        352
+      ],
+      "id": "ba9dbcc2-559e-4d8a-b0fb-9809cd5c8a0e",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse the stringified JSON from the LLM text output\nconst rawText = $json.text;\nconst parsedData = JSON.parse(rawText);\n\nreturn {\n  json: parsedData\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1776,
+        480
+      ],
+      "id": "a3c79684-c746-43b1-9075-4c6239eac00e",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "amount": 15
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        2304,
+        576
+      ],
+      "id": "99992d9c-c5e1-4b88-9dd5-c7337dcbbd28",
+      "name": "Wait1",
+      "webhookId": "a15a74c0-3427-4376-a7e1-f3c906658026"
+    },
+    {
+      "parameters": {
+        "operation": "Run actor and get dataset",
+        "actorId": {
+          "__rl": true,
+          "value": "hKByXkMQaC5Qt9UMN",
+          "mode": "list",
+          "cachedResultName": "Linkedin Jobs Scraper (curious_coder/linkedin-jobs-scraper)",
+          "cachedResultUrl": "https://console.apify.com/actors/hKByXkMQaC5Qt9UMN/input"
+        }
+      },
+      "type": "@apify/n8n-nodes-apify.apify",
+      "typeVersion": 1,
+      "position": [
+        352,
+        384
+      ],
+      "id": "5a1cb777-30de-438f-8f33-12a6b82fe497",
+      "name": "Run an Actor and get dataset",
+      "credentials": {
+        "apifyApi": {
+          "id": "J5YdTM8xupjaXFiQ",
+          "name": "Apify account 2"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        576,
+        288
+      ],
+      "id": "dd97786e-fe2c-4818-922d-28d9eb67d13a",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "chatId": "8845230921",
+        "text": "=🚀 *New Graduate Role Found!*  📌 *Role:* {{ $json.job_title }} 🎯 *Match Score:* {{ $json.fit_score }}/10 💡 *Reasoning:* {{ $json.reasoning }}  🔗 [Apply Here]({{ $json.apply_link }})",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2144,
+        304
+      ],
+      "id": "67849070-52c5-4b7f-8350-51e0808021c9",
+      "name": "Send a text message",
+      "webhookId": "de78d9c6-20b7-4170-aeb6-0990f573e1f3",
+      "credentials": {
+        "telegramApi": {
+          "id": "EbFcICDuhYrIs26W",
+          "name": "job hunt"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Run an Actor and get dataset",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "RSS Read",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RSS Read": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter": {
+      "main": [
+        [
+          {
+            "node": "Remove Duplicates",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Remove Duplicates": {
+      "main": [
+        [
+          {
+            "node": "Limit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limit": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run an Actor and get dataset": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Filter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a text message": {
+      "main": [
+        [
+          {
+            "node": "Wait1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "timezone": "Africa/Lagos",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "e229d5fc-ef85-4841-bbaa-6c3728cd8f57",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "13ff3582439a99c8dc80561afe729fccd8e5ecb467e032acc521d2dc3b6fc2df"
+  },
+  "nodeGroups": [],
+  "id": "OebJR4W7paR511vQ",
+  "tags": []
+}
